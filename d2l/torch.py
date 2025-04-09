@@ -302,10 +302,6 @@ class Trainer(d2l.HyperParameters):
         for self.epoch in range(self.max_epochs):
             self.fit_epoch()
 
-    def prepare_batch(self, batch):
-        """Defined in :numref:`sec_linear_scratch`"""
-        return batch
-
     def fit_epoch(self):
         """Defined in :numref:`sec_linear_scratch`"""
         self.model.train()

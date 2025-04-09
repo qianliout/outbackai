@@ -35,7 +35,6 @@ class RNNScratch(d2l.Module):  # @save
         return outputs, state
 
 
-
 def check_len(a, n):  # @save
     """Check the length of a list."""
     assert len(a) == n, f'list\'s length {len(a)} != expected length {n}'
@@ -45,9 +44,6 @@ def check_shape(a, shape):  # @save
     """Check the shape of a tensor."""
     assert a.shape == shape, \
         f'tensor\'s shape {a.shape} != expected shape {shape}'
-
-
-
 
 
 class RNNLMScratch(d2l.Classifier):  # @save
@@ -65,8 +61,16 @@ class RNNLMScratch(d2l.Classifier):  # @save
         self.b_q = nn.Parameter(torch.zeros(self.vocab_size))
 
     def training_step(self, batch):
+        # 1. 计算损失：self(*batch[:-1])是模型预测结果，batch[-1]是真实标签
+        #    batch结构通常为(输入序列, 目标序列)
         l = self.loss(self(*batch[:-1]), batch[-1])
+
+        # 2. 计算并记录困惑度(perplexity)
+        #    torch.exp(l)将负对数似然损失转换为困惑度
+        #    train=True表示这是训练集的指标
         self.plot('ppl', torch.exp(l), train=True)
+
+        # 3. 返回损失值用于梯度更新
         return l
 
     def validation_step(self, batch):
@@ -79,12 +83,14 @@ class RNNLMScratch(d2l.Classifier):  # @save
 
     def output_layer(self, rnn_outputs):
         outputs = [torch.matmul(H, self.W_hq) + self.b_q for H in rnn_outputs]
-        return torch.stack(outputs, 1)
+        out = torch.stack(outputs, 1)
+        return out
 
     def forward(self, X, state=None):
         embs = self.one_hot(X)
         rnn_outputs, _ = self.rnn(embs, state)
-        return self.output_layer(rnn_outputs)
+        res = self.output_layer(rnn_outputs)
+        return res
 
     def predict(self, prefix, num_preds, vocab, device=None):
         state, outputs = None, [vocab[prefix[0]]]
@@ -97,31 +103,55 @@ class RNNLMScratch(d2l.Classifier):  # @save
             else:  # Predict num_preds steps
                 Y = self.output_layer(rnn_outputs)
                 outputs.append(int(Y.argmax(axis=2).reshape(1)))
-        return ''.join([vocab.idx_to_token[i] for i in outputs])
+        pre = ''.join([vocab.idx_to_token[i] for i in outputs])
+        return pre
 
 
 @d2l.add_to_class(d2l.Trainer)  # @save
 def clip_gradients(self, grad_clip_val, model):
+    # 获取模型中所有需要计算梯度的参数
     params = [p for p in model.parameters() if p.requires_grad]
-    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+
+    # 计算所有参数梯度的L2范数（整体梯度大小）
+    # 1. 对每个参数计算其梯度的平方和(p.grad ** 2)
+    # 2. 对所有参数的梯度平方和求和
+    # 3. 最后开平方得到整体梯度范数
+    # norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+
+    # 计算梯度平方和
+    grad_squares = [torch.sum(p.grad ** 2) for p in params]
+    # 求和
+    total_sum = sum(grad_squares)
+    # 开平方得到L2范数
+    norm = torch.sqrt(total_sum)
+
+    # 如果梯度范数超过阈值，进行裁剪
     if norm > grad_clip_val:
+        # 对每个参数进行梯度缩放
         for param in params:
+            # 按比例缩小梯度，保持方向不变
+            # grad_clip_val/norm是缩放因子
             param.grad[:] *= grad_clip_val / norm
 
 
 if __name__ == '__main__':
-    batch_size, num_inputs, num_hiddens, num_steps = 2, 16, 32, 100
-    rnn = RNNScratch(num_inputs, num_hiddens)
-    X = torch.ones((num_steps, batch_size, num_inputs))
-    outputs, state = rnn(X)
+    # batch_size, num_inputs, num_hiddens, num_steps = 2, 16, 32, 100
+    # rnn = RNNScratch(num_inputs, num_hiddens)
+    # X = torch.ones((num_steps, batch_size, num_inputs))
+    # outputs, state = rnn(X)
+    #
+    # check_len(outputs, num_steps)
+    # check_shape(outputs[0], (batch_size, num_hiddens))
+    # check_shape(state, (batch_size, num_hiddens))
 
-    check_len(outputs, num_steps)
-    check_shape(outputs[0], (batch_size, num_hiddens))
-    check_shape(state, (batch_size, num_hiddens))
+    # model = RNNLMScratch(rnn, num_inputs)
+    # outputs = model(torch.ones((batch_size, num_steps), dtype=torch.int64))
+    # check_shape(outputs, (batch_size, num_steps, num_inputs))
 
-    model = RNNLMScratch(rnn, num_inputs)
-    outputs = model(torch.ones((batch_size, num_steps), dtype=torch.int64))
-    check_shape(outputs, (batch_size, num_steps, num_inputs))
+    # 在 TimeMachine 类中， num_steps 参数的作用是定义每个训练样本的序列长度（时间步数）。具体来说：
+    # 1. 序列建模 ：在语言模型中，我们需要将文本序列分割成固定长度的子序列进行训练。 num_steps 就是控制这个子序列的长度。
+    # 2. 输入输出构造 ：
+    #  - 每个样本包含 num_steps 个连续的token作为输入
 
     data = d2l.TimeMachine(batch_size=1024, num_steps=32)
     rnn = RNNScratch(num_inputs=len(data.vocab), num_hiddens=32)
@@ -129,5 +159,5 @@ if __name__ == '__main__':
     trainer = d2l.Trainer(max_epochs=100, gradient_clip_val=1, num_gpus=1)
     trainer.fit(model, data)
 
-    pr =  model.predict('it has', 20, data.vocab, d2l.try_gpu())
+    pr = model.predict('it is', 20, data.vocab, d2l.try_gpu())
     print(pr)
