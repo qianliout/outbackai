@@ -24,6 +24,7 @@ train_augs = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
     normalize])
 
+# Compose 其主要功能是将多个图像变换操作组合在一起
 test_augs = torchvision.transforms.Compose([
     # 1. 原图像的尺寸大小不一致。 调整图像大小至256x256（保持长宽比）
     torchvision.transforms.Resize([256, 256]),
