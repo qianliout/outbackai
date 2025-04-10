@@ -173,3 +173,11 @@ cython_debug/
 
 d2l-zh/pytorch/data
 d2l-zh/pytorch/img
+d2l-zh/pytorch/static
+d2l-en/pytorch/static
+d2l-en/pytorch/data
+d2l-en/pytorch/img
+*.gz
+train-images-idx*
+t10k-*
+train-labels-idx*
