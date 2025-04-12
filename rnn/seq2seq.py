@@ -27,6 +27,7 @@ class Seq2SeqEncoder(d2l.Encoder):  # @save
 
     def forward(self, X, *args):
         # X shape: (batch_size, num_steps)
+        # x.t() 是张量的转置操作(transpose)
         embs = self.embedding(X.t().type(torch.int64))
         # embs shape: (num_steps, batch_size, embed_size)
         outputs, state = self.rnn(embs)
