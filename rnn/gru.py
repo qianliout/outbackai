@@ -23,6 +23,7 @@ class GRUScratch(d2l.Module):
             # Initial state with shape: (batch_size, num_hiddens)
             H = torch.zeros((inputs.shape[1], self.num_hiddens), device=inputs.device)
         outputs = []
+        #  inputs.shape: (num_steps, batch_size, vab_size)
         for X in inputs:
             Z = torch.sigmoid(
                 torch.matmul(X, self.W_xz) + torch.matmul(H, self.W_hz) + self.b_z

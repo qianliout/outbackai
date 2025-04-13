@@ -76,18 +76,18 @@ def set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
 
 
 def plot(
-    X,
-    Y=None,
-    xlabel=None,
-    ylabel=None,
-    legend=[],
-    xlim=None,
-    ylim=None,
-    xscale="linear",
-    yscale="linear",
-    fmts=("-", "m--", "g-.", "r:"),
-    figsize=(3.5, 2.5),
-    axes=None,
+        X,
+        Y=None,
+        xlabel=None,
+        ylabel=None,
+        legend=[],
+        xlim=None,
+        ylim=None,
+        xscale="linear",
+        yscale="linear",
+        fmts=("-", "m--", "g-.", "r:"),
+        figsize=(3.5, 2.5),
+        axes=None,
 ):
     """Plot data points.
 
@@ -95,10 +95,10 @@ def plot(
 
     def has_one_axis(X):  # True if X (tensor or list) has 1 axis
         return (
-            hasattr(X, "ndim")
-            and X.ndim == 1
-            or isinstance(X, list)
-            and not hasattr(X[0], "__len__")
+                hasattr(X, "ndim")
+                and X.ndim == 1
+                or isinstance(X, list)
+                and not hasattr(X[0], "__len__")
         )
 
     if has_one_axis(X):
@@ -158,19 +158,19 @@ class ProgressBoard(d2l.HyperParameters):
     Defined in :numref:`sec_oo-design`"""
 
     def __init__(
-        self,
-        xlabel=None,
-        ylabel=None,
-        xlim=None,
-        ylim=None,
-        xscale="linear",
-        yscale="linear",
-        ls=["-", "--", "-.", ":"],
-        colors=["C0", "C1", "C2", "C3"],
-        fig=None,
-        axes=None,
-        figsize=(3.5, 2.5),
-        display=True,
+            self,
+            xlabel=None,
+            ylabel=None,
+            xlim=None,
+            ylim=None,
+            xscale="linear",
+            yscale="linear",
+            ls=["-", "--", "-.", ":"],
+            colors=["C0", "C1", "C2", "C3"],
+            fig=None,
+            axes=None,
+            figsize=(3.5, 2.5),
+            display=True,
     ):
         self.save_hyperparameters()
 
@@ -380,7 +380,7 @@ class Trainer(d2l.HyperParameters):
     def clip_gradients(self, grad_clip_val, model):
         """Defined in :numref:`sec_rnn-scratch`"""
         params = [p for p in model.parameters() if p.requires_grad]
-        norm = torch.sqrt(sum(torch.sum((p.grad**2)) for p in params))
+        norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
         if norm > grad_clip_val:
             for param in params:
                 param.grad[:] *= grad_clip_val / norm
@@ -634,7 +634,7 @@ def corr2d(X, K):
     Y = d2l.zeros((X.shape[0] - h + 1, X.shape[1] - w + 1))
     for i in range(Y.shape[0]):
         for j in range(Y.shape[1]):
-            Y[i, j] = d2l.reduce_sum((X[i : i + h, j : j + w] * K))
+            Y[i, j] = d2l.reduce_sum((X[i: i + h, j: j + w] * K))
     return Y
 
 
@@ -768,7 +768,7 @@ class TimeMachine(d2l.DataModule):
         self.save_hyperparameters()
         corpus, self.vocab = self.build(self._download())
         array = d2l.tensor(
-            [corpus[i : i + num_steps + 1] for i in range(len(corpus) - num_steps)]
+            [corpus[i: i + num_steps + 1] for i in range(len(corpus) - num_steps)]
         )
         # - self.X : (num_samples, num_steps) 每个样本包含 num_steps 个连续的token
         # - self.Y : (num_samples, num_steps) 对应 self.X 向右移动1位的序列
@@ -888,7 +888,9 @@ class RNNLMScratch(d2l.Classifier):
         self.b_q = nn.Parameter(d2l.zeros(self.vocab_size))
 
     def training_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
+        pre = self(*batch[:-1])
+        vale = batch[-1]
+        l = self.loss(pre, vale)
         self.plot("ppl", d2l.exp(l), train=True)
         return l
 
@@ -909,9 +911,13 @@ class RNNLMScratch(d2l.Classifier):
 
     def forward(self, X, state=None):
         """Defined in :numref:`sec_rnn-scratch`"""
+        # X = (batch_size,num_steps)
         embs = self.one_hot(X)
+        # embs = (num_steps,batch_size,vocab_size)
         rnn_outputs, _ = self.rnn(embs, state)
-        return self.output_layer(rnn_outputs)
+        out = self.output_layer(rnn_outputs)
+        # out = (batch_size, num_steps,vocab_size)
+        return out
 
     def predict(self, prefix, num_preds, vocab, device=None):
         """Defined in :numref:`sec_rnn-scratch`"""
@@ -1194,17 +1200,17 @@ def bleu(pred_seq, label_seq, k):
     for n in range(1, min(k, len_pred) + 1):
         num_matches, label_subs = 0, collections.defaultdict(int)
         for i in range(len_label - n + 1):
-            label_subs[" ".join(label_tokens[i : i + n])] += 1
+            label_subs[" ".join(label_tokens[i: i + n])] += 1
         for i in range(len_pred - n + 1):
-            if label_subs[" ".join(pred_tokens[i : i + n])] > 0:
+            if label_subs[" ".join(pred_tokens[i: i + n])] > 0:
                 num_matches += 1
-                label_subs[" ".join(pred_tokens[i : i + n])] -= 1
+                label_subs[" ".join(pred_tokens[i: i + n])] -= 1
         score *= math.pow(num_matches / (len_pred - n + 1), math.pow(0.5, n))
     return score
 
 
 def show_heatmaps(
-    matrices, xlabel, ylabel, titles=None, figsize=(2.5, 2.5), cmap="Reds"
+        matrices, xlabel, ylabel, titles=None, figsize=(2.5, 2.5), cmap="Reds"
 ):
     """Show heatmaps of matrices.
 
@@ -1235,8 +1241,8 @@ def masked_softmax(X, valid_lens):
     def _sequence_mask(X, valid_len, value=0):
         maxlen = X.size(1)
         mask = (
-            torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
-            < valid_len[:, None]
+                torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
+                < valid_len[:, None]
         )
         X[~mask] = value
         return X
@@ -1437,7 +1443,7 @@ class TransformerEncoderBlock(nn.Module):
     Defined in :numref:`subsec_positionwise-ffn`"""
 
     def __init__(
-        self, num_hiddens, ffn_num_hiddens, num_heads, dropout, use_bias=False
+            self, num_hiddens, ffn_num_hiddens, num_heads, dropout, use_bias=False
     ):
         super().__init__()
         self.attention = d2l.MultiHeadAttention(
@@ -1458,14 +1464,14 @@ class TransformerEncoder(d2l.Encoder):
     Defined in :numref:`subsec_transformer-encoder`"""
 
     def __init__(
-        self,
-        vocab_size,
-        num_hiddens,
-        ffn_num_hiddens,
-        num_heads,
-        num_blks,
-        dropout,
-        use_bias=False,
+            self,
+            vocab_size,
+            num_hiddens,
+            ffn_num_hiddens,
+            num_heads,
+            num_blks,
+            dropout,
+            use_bias=False,
     ):
         super().__init__()
         self.num_hiddens = num_hiddens
@@ -1712,7 +1718,7 @@ def train_batch_ch13(net, X, y, loss, trainer, devices):
 
 
 def train_ch13(
-    net, train_iter, test_iter, loss, trainer, num_epochs, devices=d2l.try_all_gpus()
+        net, train_iter, test_iter, loss, trainer, num_epochs, devices=d2l.try_all_gpus()
 ):
     """Train a model with multiple GPUs (defined in Chapter 13).
 
@@ -1823,14 +1829,14 @@ def multibox_prior(data, sizes, ratios):
     # Generate `boxes_per_pixel` number of heights and widths that are later
     # used to create anchor box corner coordinates (xmin, xmax, ymin, ymax)
     w = (
-        torch.cat(
-            (
-                size_tensor * torch.sqrt(ratio_tensor[0]),
-                sizes[0] * torch.sqrt(ratio_tensor[1:]),
+            torch.cat(
+                (
+                    size_tensor * torch.sqrt(ratio_tensor[0]),
+                    sizes[0] * torch.sqrt(ratio_tensor[1:]),
+                )
             )
-        )
-        * in_height
-        / in_width
+            * in_height
+            / in_width
     )  # Handle rectangular inputs
     h = torch.cat(
         (
@@ -1840,7 +1846,7 @@ def multibox_prior(data, sizes, ratios):
     )
     # Divide by 2 to get half height and half width
     anchor_manipulations = (
-        torch.stack((-w, -h, w, h)).T.repeat(in_height * in_width, 1) / 2
+            torch.stack((-w, -h, w, h)).T.repeat(in_height * in_width, 1) / 2
     )
 
     # Each center point will have `boxes_per_pixel` number of anchor boxes, so
@@ -2009,7 +2015,7 @@ def nms(boxes, scores, iou_threshold):
 
 
 def multibox_detection(
-    cls_probs, offset_preds, anchors, nms_threshold=0.5, pos_threshold=0.009999999
+        cls_probs, offset_preds, anchors, nms_threshold=0.5, pos_threshold=0.009999999
 ):
     """Predict bounding boxes using non-maximum suppression.
 
@@ -2194,7 +2200,7 @@ def voc_colormap2label():
     """Build the mapping from RGB to class indices for VOC labels.
 
     Defined in :numref:`sec_semantic_segmentation`"""
-    colormap2label = torch.zeros(256**3, dtype=torch.long)
+    colormap2label = torch.zeros(256 ** 3, dtype=torch.long)
     for i, colormap in enumerate(VOC_COLORMAP):
         colormap2label[(colormap[0] * 256 + colormap[1]) * 256 + colormap[2]] = i
     return colormap2label
@@ -2571,15 +2577,15 @@ class BERTEncoder(nn.Module):
     Defined in :numref:`subsec_bert_input_rep`"""
 
     def __init__(
-        self,
-        vocab_size,
-        num_hiddens,
-        ffn_num_hiddens,
-        num_heads,
-        num_blks,
-        dropout,
-        max_len=1000,
-        **kwargs,
+            self,
+            vocab_size,
+            num_hiddens,
+            ffn_num_hiddens,
+            num_heads,
+            num_blks,
+            dropout,
+            max_len=1000,
+            **kwargs,
     ):
         super(BERTEncoder, self).__init__(**kwargs)
         self.token_embedding = nn.Embedding(vocab_size, num_hiddens)
@@ -2654,14 +2660,14 @@ class BERTModel(nn.Module):
     Defined in :numref:`subsec_nsp`"""
 
     def __init__(
-        self,
-        vocab_size,
-        num_hiddens,
-        ffn_num_hiddens,
-        num_heads,
-        num_blks,
-        dropout,
-        max_len=1000,
+            self,
+            vocab_size,
+            num_hiddens,
+            ffn_num_hiddens,
+            num_heads,
+            num_blks,
+            dropout,
+            max_len=1000,
     ):
         super(BERTModel, self).__init__()
         self.encoder = BERTEncoder(
@@ -2909,16 +2915,16 @@ def load_data_wiki(batch_size, max_len):
 
 
 def _get_batch_loss_bert(
-    net,
-    loss,
-    vocab_size,
-    tokens_X,
-    segments_X,
-    valid_lens_x,
-    pred_positions_X,
-    mlm_weights_X,
-    mlm_Y,
-    nsp_y,
+        net,
+        loss,
+        vocab_size,
+        tokens_X,
+        segments_X,
+        valid_lens_x,
+        pred_positions_X,
+        mlm_weights_X,
+        mlm_Y,
+        nsp_y,
 ):
     """Defined in :numref:`sec_bert-pretraining`"""
     # Forward pass
@@ -3099,7 +3105,7 @@ def predict_snli(net, vocab, premise, hypothesis):
 
 def rbfkernel(x1, x2, ls=4.0):
     dist = distance_matrix(np.expand_dims(x1, 1), np.expand_dims(x2, 1))
-    return np.exp(-(1.0 / ls / 2) * (dist**2))
+    return np.exp(-(1.0 / ls / 2) * (dist ** 2))
 
 
 class HPOTrainer(d2l.Trainer):
@@ -3225,7 +3231,7 @@ class SuccessiveHalvingScheduler(d2l.HPOScheduler):
         # Compute K, which is later used to determine the number of configurations
         self.K = int(np.log(r_max / r_min) / np.log(eta))
         # Define the rungs
-        self.rung_levels = [r_min * eta**k for k in range(self.K + 1)]
+        self.rung_levels = [r_min * eta ** k for k in range(self.K + 1)]
         if r_max not in self.rung_levels:
             # The final rung should be r_max
             self.rung_levels.append(r_max)
@@ -3241,7 +3247,7 @@ class SuccessiveHalvingScheduler(d2l.HPOScheduler):
         if len(self.queue) == 0:
             # Start a new round of successive halving
             # Number of configurations for the first rung:
-            n0 = int(self.prefact * self.eta**self.K)
+            n0 = int(self.prefact * self.eta ** self.K)
             for _ in range(n0):
                 config = self.searcher.sample_configuration()
                 config["max_epochs"] = self.r_min  # Set r = r_min
@@ -3260,22 +3266,22 @@ class SuccessiveHalvingScheduler(d2l.HPOScheduler):
             self.observed_error_at_rungs[ri].append((config, error))
             # Determine how many configurations should be evaluated on this rung
             ki = self.K - self.rung_levels.index(ri)
-            ni = int(self.prefact * self.eta**ki)
+            ni = int(self.prefact * self.eta ** ki)
             # If we observed all configuration on this rung r_i, we estimate the
             # top 1 / eta configuration, add them to queue and promote them for
             # the next rung r_{i+1}
             if len(self.observed_error_at_rungs[ri]) >= ni:
                 kiplus1 = ki - 1
-                niplus1 = int(self.prefact * self.eta**kiplus1)
+                niplus1 = int(self.prefact * self.eta ** kiplus1)
                 best_performing_configurations = self.get_top_n_configurations(
                     rung_level=ri, n=niplus1
                 )
                 riplus1 = self.rung_levels[self.K - kiplus1]  # r_{i+1}
                 # Queue may not be empty: insert new entries at the beginning
                 self.queue = [
-                    dict(config, max_epochs=riplus1)
-                    for config in best_performing_configurations
-                ] + self.queue
+                                 dict(config, max_epochs=riplus1)
+                                 for config in best_performing_configurations
+                             ] + self.queue
                 self.observed_error_at_rungs[ri] = []  # Reset
 
     def get_top_n_configurations(self, rung_level, n):
@@ -3301,9 +3307,9 @@ def update_D(X, Z, net_D, net_G, loss, trainer_D):
     # computing gradients.
     fake_Y = net_D(fake_X.detach())
     loss_D = (
-        loss(real_Y, ones.reshape(real_Y.shape))
-        + loss(fake_Y, zeros.reshape(fake_Y.shape))
-    ) / 2
+                     loss(real_Y, ones.reshape(real_Y.shape))
+                     + loss(fake_Y, zeros.reshape(fake_Y.shape))
+             ) / 2
     loss_D.backward()
     trainer_D.step()
     return loss_D
@@ -3727,18 +3733,18 @@ class Animator:
     """For plotting data in animation."""
 
     def __init__(
-        self,
-        xlabel=None,
-        ylabel=None,
-        legend=None,
-        xlim=None,
-        ylim=None,
-        xscale="linear",
-        yscale="linear",
-        fmts=("-", "m--", "g-.", "r:"),
-        nrows=1,
-        ncols=1,
-        figsize=(3.5, 2.5),
+            self,
+            xlabel=None,
+            ylabel=None,
+            legend=None,
+            xlim=None,
+            ylim=None,
+            xscale="linear",
+            yscale="linear",
+            fmts=("-", "m--", "g-.", "r:"),
+            nrows=1,
+            ncols=1,
+            figsize=(3.5, 2.5),
     ):
         """Defined in :numref:`sec_utils`"""
         # Incrementally plot multiple lines
@@ -3896,7 +3902,7 @@ def grad_clipping(net, theta):
         params = [p for p in net.parameters() if p.requires_grad]
     else:
         params = net.params
-    norm = torch.sqrt(sum(torch.sum((p.grad**2)) for p in params))
+    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
     if norm > theta:
         for param in params:
             param.grad[:] *= theta / norm
@@ -3996,8 +4002,8 @@ def sequence_mask(X, valid_len, value=0):
     Defined in :numref:`sec_utils`"""
     maxlen = X.size(1)
     mask = (
-        torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
-        < valid_len[:, None]
+            torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
+            < valid_len[:, None]
     )
     X[~mask] = value
     return X
@@ -4068,13 +4074,13 @@ def train_seq2seq(net, data_iter, lr, num_epochs, tgt_vocab, device):
 
 
 def predict_seq2seq(
-    net,
-    src_sentence,
-    src_vocab,
-    tgt_vocab,
-    num_steps,
-    device,
-    save_attention_weights=False,
+        net,
+        src_sentence,
+        src_vocab,
+        tgt_vocab,
+        num_steps,
+        device,
+        save_attention_weights=False,
 ):
     """Predict for sequence to sequence.
 
