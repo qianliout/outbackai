@@ -11,39 +11,38 @@ class RNNScratch(d2l.Module):  # @save
     def __init__(self, num_inputs, num_hiddens, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
-        self.W_xh = nn.Parameter(
-            torch.randn(num_inputs, num_hiddens) * sigma)
-        self.W_hh = nn.Parameter(
-            torch.randn(num_hiddens, num_hiddens) * sigma)
+        self.W_xh = nn.Parameter(torch.randn(num_inputs, num_hiddens) * sigma)
+        self.W_hh = nn.Parameter(torch.randn(num_hiddens, num_hiddens) * sigma)
         self.b_h = nn.Parameter(torch.zeros(num_hiddens))
 
     def forward(self, inputs, state=None):
         if state is None:
             # Initial state with shape: (batch_size, num_hiddens)
-            state = torch.zeros((inputs.shape[1], self.num_hiddens),
-                                device=inputs.device)
+            state = torch.zeros(
+                (inputs.shape[1], self.num_hiddens), device=inputs.device
+            )
         else:
             # 元组解包方式以下两种方式等价：
             # state = state[0]    # 索引访问方式
-            state, = state
+            (state,) = state
 
         outputs = []
         for X in inputs:  # Shape of inputs: (num_steps, batch_size, num_inputs)
-            state = torch.tanh(torch.matmul(X, self.W_xh) +
-                               torch.matmul(state, self.W_hh) + self.b_h)
+            state = torch.tanh(
+                torch.matmul(X, self.W_xh) + torch.matmul(state, self.W_hh) + self.b_h
+            )
             outputs.append(state)
         return outputs, state
 
 
 def check_len(a, n):  # @save
     """Check the length of a list."""
-    assert len(a) == n, f'list\'s length {len(a)} != expected length {n}'
+    assert len(a) == n, f"list's length {len(a)} != expected length {n}"
 
 
 def check_shape(a, shape):  # @save
     """Check the shape of a tensor."""
-    assert a.shape == shape, \
-        f'tensor\'s shape {a.shape} != expected shape {shape}'
+    assert a.shape == shape, f"tensor's shape {a.shape} != expected shape {shape}"
 
 
 class RNNLMScratch(d2l.Classifier):  # @save
@@ -56,8 +55,8 @@ class RNNLMScratch(d2l.Classifier):  # @save
 
     def init_params(self):
         self.W_hq = nn.Parameter(
-            torch.randn(
-                self.rnn.num_hiddens, self.vocab_size) * self.rnn.sigma)
+            torch.randn(self.rnn.num_hiddens, self.vocab_size) * self.rnn.sigma
+        )
         self.b_q = nn.Parameter(torch.zeros(self.vocab_size))
 
     def training_step(self, batch):
@@ -68,14 +67,14 @@ class RNNLMScratch(d2l.Classifier):  # @save
         # 2. 计算并记录困惑度(perplexity)
         #    torch.exp(l)将负对数似然损失转换为困惑度
         #    train=True表示这是训练集的指标
-        self.plot('ppl', torch.exp(l), train=True)
+        self.plot("ppl", torch.exp(l), train=True)
 
         # 3. 返回损失值用于梯度更新
         return l
 
     def validation_step(self, batch):
         l = self.loss(self(*batch[:-1]), batch[-1])
-        self.plot('ppl', torch.exp(l), train=False)
+        self.plot("ppl", torch.exp(l), train=False)
 
     def one_hot(self, X):
         # Output shape: (num_steps, batch_size, vocab_size)
@@ -103,7 +102,7 @@ class RNNLMScratch(d2l.Classifier):  # @save
             else:  # Predict num_preds steps
                 Y = self.output_layer(rnn_outputs)
                 outputs.append(int(Y.argmax(axis=2).reshape(1)))
-        pre = ''.join([vocab.idx_to_token[i] for i in outputs])
+        pre = "".join([vocab.idx_to_token[i] for i in outputs])
         return pre
 
 
@@ -119,7 +118,7 @@ def clip_gradients(self, grad_clip_val, model):
     # norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
 
     # 计算梯度平方和
-    grad_squares = [torch.sum(p.grad ** 2) for p in params]
+    grad_squares = [torch.sum(p.grad**2) for p in params]
     # 求和
     total_sum = sum(grad_squares)
     # 开平方得到L2范数
@@ -134,7 +133,7 @@ def clip_gradients(self, grad_clip_val, model):
             param.grad[:] *= grad_clip_val / norm
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # batch_size, num_inputs, num_hiddens, num_steps = 2, 16, 32, 100
     # rnn = RNNScratch(num_inputs, num_hiddens)
     # X = torch.ones((num_steps, batch_size, num_inputs))
@@ -159,5 +158,5 @@ if __name__ == '__main__':
     trainer = d2l.Trainer(max_epochs=100, gradient_clip_val=1, num_gpus=1)
     trainer.fit(model, data)
 
-    pr = model.predict('it is', 20, data.vocab, d2l.try_gpu())
+    pr = model.predict("it is", 20, data.vocab, d2l.try_gpu())
     print(pr)

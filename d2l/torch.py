@@ -904,7 +904,8 @@ class RNNLMScratch(d2l.Classifier):
     def output_layer(self, rnn_outputs):
         """Defined in :numref:`sec_rnn-scratch`"""
         outputs = [d2l.matmul(H, self.W_hq) + self.b_q for H in rnn_outputs]
-        return d2l.stack(outputs, 1)
+        res = d2l.stack(outputs, 1)
+        return res
 
     def forward(self, X, state=None):
         """Defined in :numref:`sec_rnn-scratch`"""
