@@ -101,7 +101,7 @@ def predict_step(self, batch, device, num_steps, save_attention_weights=False):
     # 初始化解码器状态（使用编码器最终状态）
     dec_state = self.decoder.init_state(enc_all_outputs, src_valid_len)
     # 初始化输出序列：以目标序列的第一个词(通常是<bos>开始符)作为起始
-    outputs, attention_weights = [tgt[:, (0)].unsqueeze(1)], []
+    outputs, attention_weights = [tgt[:, 0].unsqueeze(1)], []
     # 逐步生成输出序列
     for _ in range(num_steps):
         # 解码器预测下一个词的概率分布
@@ -112,7 +112,8 @@ def predict_step(self, batch, device, num_steps, save_attention_weights=False):
         if save_attention_weights:
             attention_weights.append(self.decoder.attention_weights)
     # 拼接所有时间步的输出（跳过初始的<bos>）
-    return torch.cat(outputs[1:], 1), attention_weights
+    out = torch.cat(outputs[1:], 1)
+    return out, attention_weights
 
 
 def bleu(pred_seq, label_seq, k):  # @save
@@ -174,3 +175,5 @@ if __name__ == "__main__":
     model = Seq2Seq(encoder, decoder, tgt_pad=data.tgt_vocab["<pad>"], lr=0.005)
     trainer = d2l.Trainer(max_epochs=30, gradient_clip_val=1, num_gpus=1)
     trainer.fit(model, data)
+
+    predict()
