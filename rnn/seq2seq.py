@@ -31,8 +31,8 @@ class Seq2SeqEncoder(d2l.Encoder):  # @save
         embs = self.embedding(X.t().type(torch.int64))
         # embs shape: (num_steps, batch_size, embed_size)
         outputs, state = self.rnn(embs)
-        # outputs shape: (num_steps, batch_size, num_hiddens)
-        # state shape: (num_layers, batch_size, num_hiddens)
+        # outputs shape: (num_steps, batch_size, num_hiddens) *   包含每个时间步的隐藏状态（即RNN在每个时间步的输出）。
+        # state shape: (num_layers, batch_size, num_hiddens) *    包含最后一个时间步的所有层的隐藏状态(所以没有 num_steps)
         return outputs, state
 
 
@@ -53,6 +53,8 @@ class Seq2SeqDecoder(d2l.Decoder):
         # X shape: (batch_size, num_steps)
         # embs shape: (num_steps, batch_size, embed_size)
         embs = self.embedding(X.t().type(torch.int32))
+        # enc_output shape: (num_steps, batch_size, num_hiddens) *   包含每个时间步的隐藏状态（即RNN在每个时间步的输出）。
+        # hidden_state shape: (num_layers, batch_size, num_hiddens) *    包含最后一个时间步的所有层的隐藏状态(所以没有 num_steps)
         enc_output, hidden_state = state
         # context shape: (batch_size, num_hiddens)
         context = enc_output[-1]
@@ -90,19 +92,26 @@ class Seq2Seq(d2l.EncoderDecoder):  # @save
 
 @d2l.add_to_class(d2l.EncoderDecoder)  # @save
 def predict_step(self, batch, device, num_steps, save_attention_weights=False):
+    # 将batch中所有数据移动到指定设备(GPU/CPU)
     batch = [a.to(device) for a in batch]
+    # 解包batch数据：源序列、目标序列、源序列有效长度等
     src, tgt, src_valid_len, _ = batch
+    # 编码器处理源序列，获取编码输出
     enc_all_outputs = self.encoder(src, src_valid_len)
+    # 初始化解码器状态（使用编码器最终状态）
     dec_state = self.decoder.init_state(enc_all_outputs, src_valid_len)
-    outputs, attention_weights = [
-        tgt[:, (0)].unsqueeze(1),
-    ], []
+    # 初始化输出序列：以目标序列的第一个词(通常是<bos>开始符)作为起始
+    outputs, attention_weights = [tgt[:, (0)].unsqueeze(1)], []
+    # 逐步生成输出序列
     for _ in range(num_steps):
+        # 解码器预测下一个词的概率分布
         Y, dec_state = self.decoder(outputs[-1], dec_state)
+        # 取概率最大的词索引作为当前步的输出
         outputs.append(Y.argmax(2))
-        # Save attention weights (to be covered later)
+        # 可选：保存注意力权重用于可视化
         if save_attention_weights:
             attention_weights.append(self.decoder.attention_weights)
+    # 拼接所有时间步的输出（跳过初始的<bos>）
     return torch.cat(outputs[1:], 1), attention_weights
 
 
