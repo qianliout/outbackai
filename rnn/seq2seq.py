@@ -31,8 +31,8 @@ class Seq2SeqEncoder(d2l.Encoder):  # @save
         embs = self.embedding(X.t().type(torch.int64))
         # embs shape: (num_steps, batch_size, embed_size)
         outputs, state = self.rnn(embs)
-        # outputs shape: (num_steps, batch_size, num_hiddens) *   包含每个时间步的隐藏状态（即RNN在每个时间步的输出）。
-        # state shape: (num_layers, batch_size, num_hiddens) *    包含最后一个时间步的所有层的隐藏状态(所以没有 num_steps)
+        # outputs shape: (num_steps, batch_size, num_hiddens) * 包含每个时间步的隐藏状态（即RNN在每个时间步的输出）。
+        # state shape: (num_layers, batch_size, num_hiddens) *  包含最后一个时间步的所有层的隐藏状态(所以没有 num_steps)
         return outputs, state
 
 
@@ -82,12 +82,17 @@ class Seq2Seq(d2l.EncoderDecoder):  # @save
 
     def configure_optimizers(self):
         # Adam optimizer is used here
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
+        opt = torch.optim.Adam(self.parameters(), lr=self.lr)
+        return opt
 
     def loss(self, Y_hat, Y):
+        # - super(Seq2Seq, self) 明确指定从 Seq2Seq 的父类( d2l.EncoderDecoder )中查找方法
+        # - 这里重写了父类的 loss() 方法，但需要复用父类的原始损失计算逻辑
+        # - 通过 super() 实现了"部分重写"，只修改损失聚合方式而不改变基础损失计算
         l = super(Seq2Seq, self).loss(Y_hat, Y, averaged=False)
         mask = (Y.reshape(-1) != self.tgt_pad).type(torch.float32)
-        return (l * mask).sum() / mask.sum()
+        res = (l * mask).sum() / mask.sum()
+        return res
 
 
 @d2l.add_to_class(d2l.EncoderDecoder)  # @save
