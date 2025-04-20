@@ -5,6 +5,7 @@ from torch import nn
 from d2l import torch as d2l
 
 
+# 基于位置编码的前馈网络
 class PositionWiseFFN(nn.Module):  # @save
     """The positionwise feed-forward network."""
 
@@ -22,7 +23,6 @@ ffn = PositionWiseFFN(4, 8)
 ffn.eval()
 ffn(torch.ones((2, 3, 4)))[0]
 
-
 ln = nn.LayerNorm(2)
 bn = nn.LazyBatchNorm1d()
 X = torch.tensor([[1, 2], [2, 3]], dtype=torch.float32)
@@ -30,6 +30,7 @@ X = torch.tensor([[1, 2], [2, 3]], dtype=torch.float32)
 print("layer norm:", ln(X), "\nbatch norm:", bn(X))
 
 
+# 正则化
 class AddNorm(nn.Module):  # @save
     """The residual connection followed by layer normalization."""
 
@@ -62,8 +63,13 @@ class TransformerEncoderBlock(nn.Module):  # @save
         self.addnorm2 = AddNorm(num_hiddens, dropout)
 
     def forward(self, X, valid_lens):
-        Y = self.addnorm1(X, self.attention(X, X, X, valid_lens))
-        return self.addnorm2(Y, self.ffn(Y))
+        a = self.attention(X, X, X, valid_lens)
+        Y = self.addnorm1(X, a)
+        b = self.ffn(Y)
+        res = self.addnorm2(Y, b)
+        return res
+        # Y = self.addnorm1(X, self.attention(X, X, X, valid_lens))
+        # return self.addnorm2(Y, self.ffn(Y))
 
 
 X = torch.ones((2, 100, 24))
@@ -89,6 +95,10 @@ class TransformerEncoder(d2l.Encoder):  # @save
         super().__init__()
         self.num_hiddens = num_hiddens
         self.embedding = nn.Embedding(vocab_size, num_hiddens)
+        # Position encoding is added in the same dimension as the embedding
+        # dimension to ensure that the two are summed correctly when they are
+        # multiplied together
+        # 位置编码是在嵌入维度上添加的，以确保在它们相乘时正确地相加
         self.pos_encoding = d2l.PositionalEncoding(num_hiddens, dropout)
         self.blks = nn.Sequential()
         for i in range(num_blks):
@@ -103,7 +113,9 @@ class TransformerEncoder(d2l.Encoder):  # @save
         # Since positional encoding values are between -1 and 1, the embedding
         # values are multiplied by the square root of the embedding dimension
         # to rescale before they are summed up
-        X = self.pos_encoding(self.embedding(X) * math.sqrt(self.num_hiddens))
+        em = self.embedding(X) * math.sqrt(self.num_hiddens)
+        X = self.pos_encoding(em)
+        # X = self.pos_encoding(self.embedding(X) * math.sqrt(self.num_hiddens))
         self.attention_weights = [None] * len(self.blks)
         for i, blk in enumerate(self.blks):
             X = blk(X, valid_lens)
