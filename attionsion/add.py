@@ -1,3 +1,4 @@
+import re
 import torch
 from torch import nn
 from d2l import torch as d2l
@@ -29,8 +30,8 @@ def masked_softmax(X, valid_lens):  # @save
     def _sequence_mask(X, valid_len, value=0):
         maxlen = X.size(1)
         mask = (
-            torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
-            < valid_len[:, None]
+                torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
+                < valid_len[:, None]
         )
         X[~mask] = value
         return X
@@ -62,19 +63,23 @@ class AdditiveAttention(nn.Module):  # @save
     def forward(self, queries, keys, values, valid_lens):
         queries, keys = self.W_q(queries), self.W_k(keys)
         # After dimension expansion, shape of queries: (batch_size, no. of
-        # queries, 1, num_hiddens) and shape of keys: (batch_size, 1, no. of
-        # key-value pairs, num_hiddens). Sum them up with broadcasting
-        features = queries.unsqueeze(2) + keys.unsqueeze(1)
+        # 在维度扩展后，
+        # queries的形状：(batch_size，查询的个数，1，num_hidden)
+        # key的形状：(batch_size，1，“键－值”对的个数，num_hiddens)
+        # 使用广播方式进行求和
+        q1 = queries.unsqueeze(2)
+        k1 = keys.unsqueeze(1)
+        features = q1 + k1
+
         features = torch.tanh(features)
-        # There is only one output of self.w_v, so we remove the last
-        # one-dimensional entry from the shape. Shape of scores: (batch_size,
-        # no. of queries, no. of key-value pairs)
+        # self.w_v仅有一个输出，因此从形状中移除最后那个维度。
+        # scores的形状：(batch_size，查询的个数，“键-值”对的个数)
         # 在PyTorch中，squeeze(-1) 表示压缩张量的最后一维（即dim=-1），但仅当该维度的大小为1时才会被移除，否则张量保持不变。
         scores = self.w_v(features).squeeze(-1)
         self.attention_weights = masked_softmax(scores, valid_lens)
-        # Shape of values: (batch_size, no. of key-value pairs, value
-        # dimension)
-        return torch.bmm(self.dropout(self.attention_weights), values)
+        # values的形状：(batch_size，“键－值”对的个数，值的维度)
+        res = torch.bmm(self.dropout(self.attention_weights), values)
+        return res
 
 
 if __name__ == "__main__":
