@@ -11,16 +11,8 @@ class MLP(d2l.Classifier):
             nn.Flatten(),
             nn.LazyLinear(num_hiddens),
             nn.ReLU(),
-            nn.LazyLinear(num_outputs)
+            nn.LazyLinear(num_outputs),
         )
-
-
-# def forward(self, X):
-#     X = X.reshape((-1, self.num_inputs))
-#     H = relu(torch.matmul(X, self.W1) + self.b1)
-#     return torch.matmul(H, self.W2) + self.b2
-
-
 
 
 if __name__ == "__main__":
