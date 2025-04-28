@@ -92,6 +92,9 @@ class RNNLMScratch(d2l.Classifier):  # @save
         return out
 
     def forward(self, X, state=None):
+        # X shape (batch_size,num_steps)
+        # num_steps代表需要看过去的步数，但是调用forward的X，不是按顺序的
+        # cnn的循环仅仅指一个batch内的隐状态是循环更新，不代表进行入forward的X是按顺序
         # 每个batch的初始state都是None
         embs = self.one_hot(X)
         rnn_outputs, _ = self.rnn(embs, state)
