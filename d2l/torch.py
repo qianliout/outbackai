@@ -267,9 +267,6 @@ class Module(d2l.nn_Module, d2l.HyperParameters):
         self.plot("loss", l, train=False)
 
     def configure_optimizers(self):
-        raise NotImplementedError
-
-    def configure_optimizers(self):
         """Defined in :numref:`sec_classification`"""
         return torch.optim.SGD(self.parameters(), lr=self.lr)
 
@@ -538,7 +535,7 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):
     raise NotImplementedError
 
 
-class Classifier(d2l.Module):
+class Classifier(Module):
     """The base class of classification models.
 
     Defined in :numref:`sec_classification`"""
