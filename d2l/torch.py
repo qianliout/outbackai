@@ -300,8 +300,12 @@ class DataModule(d2l.HyperParameters):
 
     def get_tensorloader(self, tensors, train, indices=slice(0, None)):
         """Defined in :numref:`sec_synthetic-regression-data`"""
-        tensors = tuple(a[indices] for a in tensors)
-        dataset = torch.utils.data.TensorDataset(*tensors)
+        #  入参tensors的数据可以认为是全部数据
+        #  这里只取indices这个范围的数据
+        tensors2 = tuple(a[indices] for a in tensors)
+        dataset = torch.utils.data.TensorDataset(*tensors2)
+
+        # torch.utils.data.DataLoader 按batch_size返回iterator
         res = torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
         return res
 
@@ -732,7 +736,7 @@ class ResNeXtBlock(nn.Module):
         return F.relu(Y + X)
 
 
-class TimeMachine(d2l.DataModule):
+class TimeMachine(DataModule):
     """The Time Machine dataset.
 
     Defined in :numref:`sec_text-sequence`"""
@@ -778,7 +782,7 @@ class TimeMachine(d2l.DataModule):
         # Y: [token2, token3, token4]
         self.X, self.Y = array[:, :-1], array[:, 1:]
 
-    def get_dataloader(self, train):
+    def get_dataloader(self, train: bool):
         """Defined in :numref:`subsec_partitioning-seqs`"""
         idx = (
             slice(0, self.num_train)

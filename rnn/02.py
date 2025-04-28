@@ -54,6 +54,7 @@ class RNNLMScratch(d2l.Classifier):  # @save
         self.init_params()
 
     def init_params(self):
+        # W_hq 主要用于将 RNN 隐藏状态转换为词汇表大小的输出向量，在 RNNLMScratch 类的 output_layer 方法中被使用，代码如下：
         self.W_hq = nn.Parameter(
             torch.randn(self.rnn.num_hiddens, self.vocab_size) * self.rnn.sigma
         )
@@ -62,6 +63,7 @@ class RNNLMScratch(d2l.Classifier):  # @save
     def training_step(self, batch):
         # 1. 计算损失：self(*batch[:-1])是模型预测结果，batch[-1]是真实标签
         #    batch结构通常为(输入序列, 目标序列)
+        #  其中输入序列和输出序列的shape:(batch_size,num_steps)
         l = self.loss(self(*batch[:-1]), batch[-1])
 
         # 2. 计算并记录困惑度(perplexity)
@@ -78,14 +80,19 @@ class RNNLMScratch(d2l.Classifier):  # @save
 
     def one_hot(self, X):
         # Output shape: (num_steps, batch_size, vocab_size)
-        return F.one_hot(X.T, self.vocab_size).type(torch.float32)
+        res = F.one_hot(X.T, self.vocab_size).type(torch.float32)
+        return res
 
     def output_layer(self, rnn_outputs):
+        # run_out shape [number_steps,batch_size,num_hidden]
         outputs = [torch.matmul(H, self.W_hq) + self.b_q for H in rnn_outputs]
+        # outputs shape [number_steps,batch_size,num_output]
         out = torch.stack(outputs, 1)
+        # out shape [batch_size,number_steps,num_output]
         return out
 
     def forward(self, X, state=None):
+        # 每个batch的初始state都是None
         embs = self.one_hot(X)
         rnn_outputs, _ = self.rnn(embs, state)
         res = self.output_layer(rnn_outputs)
@@ -153,7 +160,7 @@ if __name__ == "__main__":
     #  - 每个样本包含 num_steps 个连续的token作为输入
 
     data = d2l.TimeMachine(batch_size=1024, num_steps=32)
-    rnn = RNNScratch(num_inputs=len(data.vocab), num_hiddens=32)
+    rnn = RNNScratch(num_inputs=len(data.vocab), num_hiddens=24)
     model = RNNLMScratch(rnn, vocab_size=len(data.vocab), lr=1)
     trainer = d2l.Trainer(max_epochs=100, gradient_clip_val=1, num_gpus=1)
     trainer.fit(model, data)
