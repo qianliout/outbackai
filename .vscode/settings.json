@@ -1,0 +1,12 @@
+{
+  "python.languageServer": "Default",
+  "cSpell.words": [
+    "addnorm",
+    "figsize",
+    "hiddens",
+    "keepdim",
+    "keepdims",
+    "randn",
+    "xlim"
+  ]
+}

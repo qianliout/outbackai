@@ -107,22 +107,22 @@ class RNNLMScratch(d2l.Classifier):  # @save
         # state: (1, batch_size=1, num_hiddens) 初始为None
         # outputs: List[int] 初始包含prefix第一个字符的索引
         state, outputs = None, [vocab[prefix[0]]]
-    
+
         # 循环生成字符 (prefix长度 + 预测数量 -1)
         for i in range(len(prefix) + num_preds - 1):
             # 准备输入张量
             # X: (batch_size=1, seq_len=1) ← 取outputs最后一个字符
             X = torch.tensor([[outputs[-1]]], device=device)
-            
+
             # 转换为one-hot编码
             # embs: (num_steps=1, batch_size=1, vocab_size)
             embs = self.one_hot(X)
-            
+
             # RNN前向传播
             # rnn_outputs: List[(1, num_hiddens)] 长度=num_steps=1
             # state: (1, num_hiddens) ← 最后一个时间步的状态
             rnn_outputs, state = self.rnn(embs, state)
-    
+
             if i < len(prefix) - 1:  # 预热期(使用真实字符)
                 # 直接添加prefix的下一个字符
                 outputs.append(vocab[prefix[i + 1]])
@@ -130,11 +130,11 @@ class RNNLMScratch(d2l.Classifier):  # @save
                 # 输出层处理
                 # Y: (batch_size=1, num_steps=1, vocab_size)
                 Y = self.output_layer(rnn_outputs)
-                
+
                 # 取概率最大的字符索引
                 # Y.argmax(axis=2): (1,1) ← 每个时间步的最大值索引
                 outputs.append(int(Y.argmax(axis=2).reshape(1)))
-        
+
         # 将索引序列转换为字符串
         # pre: str ← 生成的完整字符串
         pre = "".join([vocab.idx_to_token[i] for i in outputs])
@@ -171,6 +171,7 @@ def clip_gradients(self, grad_clip_val, model):
 if __name__ == "__main__":
     batch_size, num_inputs, num_hiddens, num_steps = 2, 16, 32, 100
     rnn = RNNScratch(num_inputs, num_hiddens)
+     
     X = torch.ones((num_steps, batch_size, num_inputs))
     outputs, state = rnn(X)
 
